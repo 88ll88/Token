@@ -5,26 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>抓取表格內容</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      text-align: center;
-    }
-    button {
-      padding: 12px 24px;
-      font-size: 18px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 22px;
-      font-weight: bold;
-      color: #333;
-    }
+    body { font-family: sans-serif; padding: 20px; text-align: center; }
+    button { padding: 12px 24px; font-size: 18px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    #result { margin-top: 20px; font-size: 22px; font-weight: bold; color: #333; }
   </style>
 </head>
 <body>
@@ -38,30 +21,27 @@
       const resultDiv = document.getElementById('result');
       resultDiv.innerText = "讀取中，請稍候...";
 
-      // 真正要抓取的目標網址
       const targetUrl = 'https://www.9800.com.tw/lotto539/';
       
-      // 使用 allorigins 免費 CORS 代理，避開跨網域限制
-      const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(targetUrl);
+      // 改用 corsproxy.io，速度更穩定
+      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
       try {
         const response = await fetch(proxyUrl);
-        const data = await response.json();
+        const htmlText = await response.text();
         
-        // 將抓到的 HTML 文字轉成 DOM 物件
+        // 將 HTML 文字轉成 DOM 物件
         const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, 'text/html');
+        const doc = parser.parseFromString(htmlText, 'text/html');
 
-        // 取得所有的 TR
+        // 取得所有的 TR (不分大小寫)
         const rows = doc.querySelectorAll('tr');
 
-        // 檢查是否有足夠的 TR
         if (rows.length >= 2) {
           // 第二個 TR (索引為 1)
           const secondRow = rows[1];
           const tds = secondRow.querySelectorAll('td');
 
-          // 檢查是否有足夠的 TD
           if (tds.length >= 2) {
             // 第二個 TD (索引為 1)
             const secondTdText = tds[1].innerText.trim();
@@ -75,7 +55,7 @@
 
       } catch (error) {
         console.error(error);
-        resultDiv.innerText = "抓取失敗，請確認網路連線！";
+        resultDiv.innerText = "抓取失敗，請確認連線或代理伺服器狀況！";
       }
     }
   </script>
