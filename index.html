@@ -12,7 +12,7 @@
 </head>
 <body>
 
-  <h2>抓取今彩539資料2</h2>
+  <h2>抓取今彩539資料3</h2>
   <button onclick="fetchData()">點我抓取第二個 TR 的第二個 TD</button>
   <div id="result">尚未抓取</div>
 
@@ -23,39 +23,39 @@
 
       const targetUrl = 'https://www.9800.com.tw/lotto539/';
       
-      // 改用 corsproxy.io，速度更穩定
-      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+      // 使用 raw 模式繞過防爬蟲轉頁
+      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
 
       try {
         const response = await fetch(proxyUrl);
         const htmlText = await response.text();
         
-        // 將 HTML 文字轉成 DOM 物件
+        // 解析 HTML
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, 'text/html');
 
-        // 取得所有的 TR (不分大小寫)
+        // 取得所有的 TR
         const rows = doc.querySelectorAll('tr');
 
         if (rows.length >= 2) {
-          // 第二個 TR (索引為 1)
+          // 第二個 TR (索引 1)
           const secondRow = rows[1];
           const tds = secondRow.querySelectorAll('td');
 
           if (tds.length >= 2) {
-            // 第二個 TD (索引為 1)
+            // 第二個 TD (索引 1)
             const secondTdText = tds[1].innerText.trim();
             resultDiv.innerText = "抓到的內容是：" + secondTdText;
           } else {
             resultDiv.innerText = "找到第二個 TR，但裡面沒有第二個 TD！";
           }
         } else {
-          resultDiv.innerText = "網頁中沒有找到足夠的 TR 標籤！";
+          resultDiv.innerText = "抓取到網頁，但無表格內容（可能被網站反爬蟲擋下）";
         }
 
       } catch (error) {
         console.error(error);
-        resultDiv.innerText = "抓取失敗，請確認連線或代理伺服器狀況！";
+        resultDiv.innerText = "抓取失敗，請稍後再試！";
       }
     }
   </script>
