@@ -23,9 +23,9 @@
   }
   #editor {
     width: 100%;
-    height: 400px; /* 高度從 600px 減 200px 改為 400px */
+    height: 400px;
     background: #050505;
-    border: 1px solid #fff; /* 外層大框 */
+    border: 1px solid #fff;
     padding: 10px;
     box-sizing: border-box;
     font-size: 14px;
@@ -36,19 +36,19 @@
     word-break: break-all;
   }
   .user-text {
-    color: #2ecc71; /* 綠色 */
-    border: 1px solid #fff; /* 上框 */
+    color: #2ecc71;
+    border: 1px solid #fff;
     padding: 8px;
   }
   .bot-box {
-    border: 1px solid #fff; /* 下框 */
+    border: 1px solid #fff;
     padding: 8px;
   }
   .bot-red {
-    color: #e74c3c; /* 紅色 */
+    color: #e74c3c;
   }
   .bot-blue {
-    color: #3498db; /* 藍色 */
+    color: #3498db;
   }
   #status {
     margin-top: 10px;
@@ -70,6 +70,7 @@
 const GH_ACCOUNTS = [
     { GH_OWNER: '88l88', GH_REPO: '888', GH_PATH: 'ddd.js' },
     { GH_OWNER: '88ll88', GH_REPO: '888', GH_PATH: 'ddd.js' }
+    
 ];
 
 let timer = null;
@@ -183,7 +184,6 @@ async function autoRun() {
   let githubDataMap = new Map();
 
   try {
-    // 讀取第一個帳號的資料作為基準檢查用
     let url = `https://api.github.com/repos/${GH_ACCOUNTS[0].GH_OWNER}/${GH_ACCOUNTS[0].GH_REPO}/contents/${GH_ACCOUNTS[0].GH_PATH}`;
     let res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
     if (res.ok) {
@@ -216,13 +216,8 @@ async function autoRun() {
   isUpdating = true;
 
   let htmlArr = [];
-  // 1. 上框 (綠色) 六列
   htmlArr.push(`<div class="user-text">${userText.replace(/\n/g, '<br>')}</div>`);
-  
-  // 空列 (大框中間分隔)
   htmlArr.push('<br>');
-
-  // 2. 下框 (藍色 / 紅色) 六列
   htmlArr.push('<div class="bot-box">');
   top6Dates.forEach(dateStr => {
     if (mergedMap.has(dateStr)) {
@@ -254,12 +249,10 @@ async function autoRun() {
 
   setStatus('寫入中...');
 
-  let successCount = 0;
+  let statusMsgs = [];
 
-  // 同時寫入兩個帳號
   for (let acc of GH_ACCOUNTS) {
       try {
-          // 針對每個帳號分別抓取最新的 sha，避免發生衝突
           let accUrl = `https://api.github.com/repos/${acc.GH_OWNER}/${acc.GH_REPO}/contents/${acc.GH_PATH}`;
           let accGetRes = await fetch(accUrl, { headers: { 'Authorization': `token ${token}` } });
           let accSha = sha;
@@ -282,20 +275,16 @@ async function autoRun() {
           });
 
           if (putRes.ok) {
-              successCount++;
+              statusMsgs.push(`${acc.GH_OWNER} 寫入成功!`);
+          } else {
+              statusMsgs.push(`${acc.GH_OWNER} 寫入失敗`);
           }
       } catch (e) {
-          // 忽略個別錯誤繼續執行
+          statusMsgs.push(`${acc.GH_OWNER} 錯誤`);
       }
   }
 
-  if (successCount === GH_ACCOUNTS.length) {
-      setStatus('成功');
-  } else if (successCount > 0) {
-      setStatus('部分成功');
-  } else {
-      setStatus('寫入失敗');
-  }
+  setStatus(statusMsgs.join(' | '));
 }
 </script>
 
