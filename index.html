@@ -67,9 +67,10 @@
 <div id="status"></div>
 
 <script>
-const GH_OWNER = '88ll88';
-const GH_REPO = '888';
-const GH_PATH = 'ddd.js';
+const GH_ACCOUNTS = [
+    { GH_OWNER: '88l88', GH_REPO: '888', GH_PATH: 'ddd.js' },
+    { GH_OWNER: '88ll88', GH_REPO: '888', GH_PATH: 'ddd.js' }
+];
 
 let timer = null;
 let isUpdating = false;
@@ -182,7 +183,8 @@ async function autoRun() {
   let githubDataMap = new Map();
 
   try {
-    let url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
+    // 讀取第一個帳號的資料作為基準檢查用
+    let url = `https://api.github.com/repos/${GH_ACCOUNTS[0].GH_OWNER}/${GH_ACCOUNTS[0].GH_REPO}/contents/${GH_ACCOUNTS[0].GH_PATH}`;
     let res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
     if (res.ok) {
       let resJson = await res.json();
@@ -252,28 +254,47 @@ async function autoRun() {
 
   setStatus('寫入中...');
 
-  try {
-    let url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
-    let putRes = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: '自動更新',
-        content: utf8ToB64(finalFileContent),
-        sha: sha
-      })
-    });
+  let successCount = 0;
 
-    if (putRes.ok) {
+  // 同時寫入兩個帳號
+  for (let acc of GH_ACCOUNTS) {
+      try {
+          // 針對每個帳號分別抓取最新的 sha，避免發生衝突
+          let accUrl = `https://api.github.com/repos/${acc.GH_OWNER}/${acc.GH_REPO}/contents/${acc.GH_PATH}`;
+          let accGetRes = await fetch(accUrl, { headers: { 'Authorization': `token ${token}` } });
+          let accSha = sha;
+          if (accGetRes.ok) {
+              let accJson = await accGetRes.json();
+              accSha = accJson.sha;
+          }
+
+          let putRes = await fetch(accUrl, {
+              method: 'PUT',
+              headers: {
+                  'Authorization': `token ${token}`,
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                  message: '自動更新',
+                  content: utf8ToB64(finalFileContent),
+                  sha: accSha
+              })
+          });
+
+          if (putRes.ok) {
+              successCount++;
+          }
+      } catch (e) {
+          // 忽略個別錯誤繼續執行
+      }
+  }
+
+  if (successCount === GH_ACCOUNTS.length) {
       setStatus('成功');
-    } else {
+  } else if (successCount > 0) {
+      setStatus('部分成功');
+  } else {
       setStatus('寫入失敗');
-    }
-  } catch (e) {
-    setStatus('錯誤');
   }
 }
 </script>
