@@ -64,7 +64,7 @@
     </div>
 
     <div>
-        <textarea id="inputData" placeholder="請在此貼上資料..." oninput="autoResize(this)" onpaste="handlePaste(event)"></textarea>
+        <textarea id="inputData" placeholder="請在此貼上資料..." oninput="handleInput(this)" onpaste="handlePaste(event)"></textarea>
     </div>
 
     <div id="statusResult" class="status-box">尚未執行...</div>
@@ -109,12 +109,16 @@
             if (!isProcessing) {
                 processAndUpdate();
             }
-        }, 50);
+        }, 100);
+    }
+
+    function handleInput(textarea) {
+        autoResize(textarea);
     }
 
     async function processAndUpdate() {
         if (isProcessing) return;
-        
+
         const tokenInput = document.getElementById('githubToken').value.trim();
         const inputArea = document.getElementById('inputData');
         const rawText = inputArea.value.trim();
@@ -134,26 +138,29 @@
             if (!line) continue;
 
             const parts = line.split(/\s+/);
-            if (parts.length >= 5) {
-                let dateStr = '';
-                let balls = [];
+            
+            // 找出日期 (YYYY-MM-DD)
+            let dateStr = '';
+            let dateIdx = -1;
+            for (let i = 0; i < parts.length; i++) {
+                if (/^\d{4}-\d{2}-\d{2}$/.test(parts[i])) {
+                    dateStr = parts[i];
+                    dateIdx = i;
+                    break;
+                }
+            }
 
-                if (/^\d{4}-\d{2}-\d{2}$/.test(parts[1])) {
-                    dateStr = parts[1];
-                    if (parts.length >= 9 && /^\d{2}$/.test(parts[3])) {
-                        balls = [parts[3], parts[4], parts[5], parts[6], parts[7]];
-                    } else if (parts.length >= 8) {
-                        balls = [parts[2], parts[3], parts[4], parts[5], parts[6]];
-                    } else {
-                        balls = parts.slice(parts.length - 10, parts.length - 5);
-                        if (balls.length !== 5) {
-                            balls = parts.slice(2, 7);
-                        }
+            if (dateIdx !== -1) {
+                // 從日期之後尋找連續 5 個兩位數的球號
+                let balls = [];
+                for (let j = dateIdx + 1; j < parts.length; j++) {
+                    if (/^\d{1,2}$/.test(parts[j])) {
+                        balls.push(parts[j].padStart(2, '0'));
+                        if (balls.length === 5) break;
                     }
                 }
 
                 if (dateStr && balls.length === 5) {
-                    balls = balls.map(b => b.padStart(2, '0'));
                     parsedEntries.push({ date: dateStr, balls: balls });
                 }
             }
